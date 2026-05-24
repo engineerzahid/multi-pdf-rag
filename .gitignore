@@ -1,0 +1,22 @@
+# Environment
+.env
+__pycache__/
+*.pyc
+*.pyo
+
+# Vector store (rebuild from PDFs)
+vectorstore/
+
+# Data (user uploads)
+data/
+
+# Exports
+exports/
+
+# Python venv
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
