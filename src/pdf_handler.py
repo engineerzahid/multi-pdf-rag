@@ -1,5 +1,5 @@
 from pypdf import PdfReader
-from langchain_core.schema import Document
+from langchain_core.documents import Document
 import io
 
 def extract_text_from_pdfs(files):
@@ -7,7 +7,7 @@ def extract_text_from_pdfs(files):
     for pdf in files:
         pdf.seek(0)
         reader = PdfReader(io.BytesIO(pdf.read()))
-        filename = pdf.name  # ✅ labreport.pdf
+        filename = pdf.name
 
         for page_num, page in enumerate(reader.pages):
             text = page.extract_text() or ""
