@@ -1,18 +1,15 @@
-# src/chatbot.py
-
 from langchain_groq import ChatGroq
+from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-from langchain.prompts import PromptTemplate
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain_core.prompts import PromptTemplate
 
 def get_conversation_chain(vector_store):
 
-    # ✅ streaming=True add kiya
     llm = ChatGroq(
         model="llama-3.1-8b-instant",
         temperature=0,
-        streaming=True  # ← Yahi enable karta hai streaming
+        streaming=True
     )
 
     memory = ConversationBufferMemory(
@@ -22,22 +19,22 @@ def get_conversation_chain(vector_store):
     )
 
     prompt_template = """
-         You are a helpful assistant. Answer ONLY based on the provided context.
-         Do NOT mix information from different documents unless the question specifically asks to compare them.
-         If the answer is not available in the context, say:
-         "Answer is not available in the provided documents."
+    Answer the question as detailed as possible from the provided context.
+    Do NOT mix information from different documents unless the question specifically asks to compare them.
+    If the answer is not available in the context, just say:
+    "Answer is not available in the provided documents."
 
-         Context:
-         {context}
+    Context:
+    {context}
 
-         Chat History: 
-         {chat_history}
+    Chat History:
+    {chat_history}
 
-         Question:     
-         {question}
+    Question:
+    {question}
 
-         Answer:
-         """
+    Answer:
+    """
 
     prompt = PromptTemplate(
         template=prompt_template,
