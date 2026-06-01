@@ -1,5 +1,5 @@
 from pypdf import PdfReader
-from langchain.schema import Document
+from langchain_core.schema import Document
 import io
 
 def extract_text_from_pdfs(files):
