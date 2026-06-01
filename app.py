@@ -34,7 +34,7 @@ if process_btn and uploaded_files:
     with st.spinner("Processing PDFs..."):
         st.write("Step 1: Extracting text...")
         raw_text = extract_text_from_pdfs(uploaded_files)
-        st.write(f"Done — {len(raw_text)} characters extracted")
+        st.write(f"Done — {len(raw_text)} pages extracted")
 
         st.write("Step 2: Splitting into chunks...")
         text_chunks = get_text_chunks(raw_text)
@@ -60,58 +60,63 @@ if st.session_state.vector_store is not None:
 
     user_question = st.chat_input("Ask a question about your PDFs...")
 
-   if user_question:
-    st.session_state.chat_history.append(
-        {"role": "user", "content": user_question}
-    )
+    if user_question:
+        # Step 1: User message history mein daalo
+        st.session_state.chat_history.append(
+            {"role": "user", "content": user_question}
+        )
 
-    # History ko LangChain format mein convert karo
-    lc_history = []
-    for i in range(0, len(st.session_state.chat_history) - 1, 2):
-        if i + 1 < len(st.session_state.chat_history):
-            lc_history.append((
-                st.session_state.chat_history[i]["content"],
-                st.session_state.chat_history[i+1]["content"]
-            ))
+        # Step 2: Purani history display karo
+        for msg in st.session_state.chat_history:
+            with st.chat_message(msg["role"]):
+                st.write(msg["content"])
 
-    # History pass karo
-    with st.chat_message("assistant"):
-        placeholder = st.empty()
-        full_answer = ""
-        last_chunk = None
+        # Step 3: Chat history ko LangChain format mein convert karo
+        lc_history = []
+        for i in range(0, len(st.session_state.chat_history) - 1, 2):
+            if i + 1 < len(st.session_state.chat_history):
+                lc_history.append((
+                    st.session_state.chat_history[i]["content"],
+                    st.session_state.chat_history[i + 1]["content"]
+                ))
 
-        for chunk in st.session_state.chain.stream({
-            "question": user_question,
-            "chat_history": lc_history  # ✅ manually pass
-        }):
-            token = chunk.get("answer", "")
-            full_answer += token
-            placeholder.write(full_answer + "▌")
-            last_chunk = chunk
+        # Step 4: Streaming response
+        with st.chat_message("assistant"):
+            placeholder = st.empty()
+            full_answer = ""
+            last_chunk = None
 
-        placeholder.write(full_answer)
+            for chunk in st.session_state.chain.stream({
+                "question": user_question,
+                "chat_history": lc_history
+            }):
+                token = chunk.get("answer", "")
+                full_answer += token
+                placeholder.write(full_answer + "▌")
+                last_chunk = chunk
 
-        if last_chunk:
-            source_docs = last_chunk.get("source_documents", [])
-            if source_docs:
-                with st.expander("📄 Sources"):
-                    sources_seen = set()
-                    for doc in source_docs:
-                        source = doc.metadata.get("source", "Unknown")
-                        page = doc.metadata.get("page", "?")
-                        key = f"{source}_p{page}"
-                        if key not in sources_seen:
-                            sources_seen.add(key)
-                            try:
-                                page_num = int(page) + 1
-                            except (ValueError, TypeError):
-                                page_num = page
-                            st.write(f"**{source}** — Page {page_num}")
+            # Final answer — cursor hatao
+            placeholder.write(full_answer)
 
-    st.session_state.chat_history.append(
-        {"role": "assistant", "content": full_answer}
-    )
-        # Step 5: Full answer history mein save karo
+            # Step 5: Sources display
+            if last_chunk:
+                source_docs = last_chunk.get("source_documents", [])
+                if source_docs:
+                    with st.expander("📄 Sources"):
+                        sources_seen = set()
+                        for doc in source_docs:
+                            source = doc.metadata.get("source", "Unknown")
+                            page = doc.metadata.get("page", "?")
+                            key = f"{source}_p{page}"
+                            if key not in sources_seen:
+                                sources_seen.add(key)
+                                try:
+                                    page_num = int(page) + 1
+                                except (ValueError, TypeError):
+                                    page_num = page
+                                st.write(f"**{source}** — Page {page_num}")
+
+        # Step 6: Full answer history mein save karo
         st.session_state.chat_history.append(
             {"role": "assistant", "content": full_answer}
         )
